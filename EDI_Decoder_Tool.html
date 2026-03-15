@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDI 214 Decoder — project44 TIM Tool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232636;
+            --border: #2e3250;
+            --text: #e2e8f0;
+            --text-dim: #8892a4;
+            --blue: #3b82f6;
+            --blue-dim: #1e3a5f;
+            --amber: #f59e0b;
+            --amber-dim: #422006;
+            --red: #ef4444;
+            --red-dim: #3f1010;
+            --green: #22c55e;
+            --green-dim: #0f2918;
+            --purple: #a855f7;
+            --purple-dim: #2d1b4e;
+            --teal: #14b8a6;
+            --teal-dim: #0a2926;
+            --slate: #94a3b8;
+            --slate-dim: #1e2330;
+            --indigo: #6366f1;
+            --indigo-dim: #1e1f4e;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        header .logo {
+            background: var(--blue);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+        header h1 { font-size: 17px; color: var(--text); font-weight: 600; }
+        header .sub { font-size: 12px; color: var(--text-dim); margin-left: auto; }
+
+        /* LAYOUT */
+        .app {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            flex: 1;
+            min-height: 0;
+            height: calc(100vh - 57px);
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        /* UPLOAD AREA */
+        .upload-zone {
+            margin: 16px;
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: var(--blue);
+            background: var(--blue-dim);
+        }
+        .upload-zone .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .upload-zone .title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+        .upload-zone input { display: none; }
+        .btn-upload {
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn-upload:hover { opacity: 0.85; }
+
+        /* PASTE AREA */
+        .paste-section {
+            margin: 0 16px 16px;
+            flex-shrink: 0;
+        }
+        .paste-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        textarea#ediPaste {
+            width: 100%;
+            height: 110px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            padding: 10px;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+        textarea#ediPaste:focus { border-color: var(--blue); }
+        .btn-parse {
+            width: 100%;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.15s;
+        }
+        .btn-parse:hover { opacity: 0.85; }
+        .btn-clear {
+            width: 100%;
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            padding: 7px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: all 0.15s;
+        }
+        .btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+        /* LEGEND */
+        .legend {
+            padding: 0 16px 16px;
+            flex-shrink: 0;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+        .legend-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 10.5px;
+            color: var(--text-dim);
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* SUMMARY BOX */
+        .summary-box {
+            margin: 0 16px 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            flex-shrink: 0;
+        }
+        .summary-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 7px;
+            font-size: 11.5px;
+        }
+        .summary-row .key { color: var(--text-dim); }
+        .summary-row .val {
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+        .summary-row .val.ok { color: var(--green); }
+        .summary-row .val.warn { color: var(--amber); }
+        .summary-row .val.bad { color: var(--red); }
+        .summary-row .val.dim { color: var(--text-dim); font-style: italic; font-family: inherit; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+        }
+
+        .right-panel .panel-header {
+            background: var(--surface);
+        }
+
+        /* SEGMENTS VIEW */
+        .segments-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .segments-scroll::-webkit-scrollbar { width: 6px; }
+        .segments-scroll::-webkit-scrollbar-track { background: var(--bg); }
+        .segments-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* EMPTY STATE */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            text-align: center;
+            gap: 12px;
+        }
+        .empty-state .big-icon { font-size: 52px; opacity: 0.3; }
+        .empty-state h2 { font-size: 18px; color: var(--text-dim); font-weight: 500; }
+        .empty-state p { font-size: 13px; max-width: 340px; line-height: 1.6; }
+
+        /* SEGMENT CARDS */
+        .segment-card {
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .segment-card:hover { border-color: #4a5280; }
+        .segment-card.expanded { border-color: #4a5280; }
+
+        .seg-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            user-select: none;
+        }
+        .seg-id {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            min-width: 48px;
+            padding: 4px 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .seg-name { font-size: 13px; font-weight: 600; flex: 1; }
+        .seg-brief { font-size: 11px; color: var(--text-dim); flex: 2; }
+        .seg-importance {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+        .seg-toggle {
+            color: var(--text-dim);
+            font-size: 14px;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .segment-card.expanded .seg-toggle { transform: rotate(180deg); }
+
+        /* SEGMENT DETAIL */
+        .seg-detail {
+            display: none;
+            border-top: 1px solid var(--border);
+        }
+        .segment-card.expanded .seg-detail { display: block; }
+
+        .seg-why {
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.65;
+            border-bottom: 1px solid var(--border);
+        }
+        .seg-why strong { color: var(--text); }
+
+        .fields-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .fields-table th {
+            background: var(--surface2);
+            padding: 8px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .fields-table td {
+            padding: 9px 12px;
+            font-size: 11.5px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .fields-table tr:last-child td { border-bottom: none; }
+        .fields-table tr:hover td { background: var(--surface2); }
+        .field-pos {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            min-width: 40px;
+        }
+        .field-value {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            min-width: 140px;
+        }
+        .field-name { color: var(--text-dim); min-width: 160px; font-size: 11px; }
+        .field-desc { color: var(--text-dim); font-size: 11px; line-height: 1.5; }
+        .field-value.empty { color: #3f4a5e; font-style: italic; font-weight: 400; font-family: inherit; }
+        .field-req {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+        .req-M { background: #1f2d14; color: #4ade80; }
+        .req-O { background: #1a1d27; color: #4a5568; }
+
+        /* RAW LINE */
+        .seg-raw {
+            padding: 10px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            background: var(--bg);
+            word-break: break-all;
+            border-top: 1px solid var(--border);
+        }
+        .seg-raw strong { color: var(--text-dim); font-weight: normal; font-size: 10px; }
+
+        /* COLOUR THEMES PER SEGMENT TYPE */
+        .theme-envelope .seg-header { background: #1a1d27; }
+        .theme-envelope .seg-id { background: #252a3d; color: var(--slate); }
+        .theme-envelope .seg-importance { background: #252a3d; color: var(--slate); }
+
+        .theme-boundary .seg-header { background: #1a2035; }
+        .theme-boundary .seg-id { background: var(--blue-dim); color: var(--blue); }
+        .theme-boundary .seg-importance { background: var(--blue-dim); color: var(--blue); }
+
+        .theme-critical .seg-header { background: #1f1010; }
+        .theme-critical .seg-id { background: var(--red-dim); color: var(--red); }
+        .theme-critical .seg-importance { background: var(--red-dim); color: var(--red); }
+
+        .theme-status .seg-header { background: #1f1800; }
+        .theme-status .seg-id { background: var(--amber-dim); color: var(--amber); }
+        .theme-status .seg-importance { background: var(--amber-dim); color: var(--amber); }
+
+        .theme-location .seg-header { background: #0d1f12; }
+        .theme-location .seg-id { background: var(--green-dim); color: var(--green); }
+        .theme-location .seg-importance { background: var(--green-dim); color: var(--green); }
+
+        .theme-loop .seg-header { background: #1a1030; }
+        .theme-loop .seg-id { background: var(--purple-dim); color: var(--purple); }
+        .theme-loop .seg-importance { background: var(--purple-dim); color: var(--purple); }
+
+        .theme-reference .seg-header { background: #0a1f1e; }
+        .theme-reference .seg-id { background: var(--teal-dim); color: var(--teal); }
+        .theme-reference .seg-importance { background: var(--teal-dim); color: var(--teal); }
+
+        .theme-party .seg-header { background: #12132a; }
+        .theme-party .seg-id { background: var(--indigo-dim); color: var(--indigo); }
+        .theme-party .seg-importance { background: var(--indigo-dim); color: var(--indigo); }
+
+        .theme-other .seg-header { background: var(--surface); }
+        .theme-other .seg-id { background: var(--surface2); color: var(--text-dim); }
+        .theme-other .seg-importance { background: var(--surface2); color: var(--text-dim); }
+
+        /* ALERTS */
+        .alert {
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.55;
+        }
+        .alert-warn { background: #2a1f00; border: 1px solid #854d0e; color: #fcd34d; }
+        .alert-error { background: #2a0a0a; border: 1px solid #991b1b; color: #fca5a5; }
+        .alert-ok { background: #0a1f12; border: 1px solid #166534; color: #86efac; }
+
+        /* LOOP GROUP */
+        .loop-group {
+            border: 1px solid var(--purple-dim);
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 12px;
+            background: #0e0b1a;
+        }
+        .loop-group-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--purple);
+            padding: 0 8px 8px;
+            opacity: 0.7;
+        }
+
+        /* SAMPLE BUTTON */
+        .btn-sample {
+            background: transparent;
+            color: var(--blue);
+            border: 1px solid var(--blue-dim);
+            padding: 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 6px;
+            transition: all 0.15s;
+        }
+        .btn-sample:hover { background: var(--blue-dim); }
+
+        /* ERROR STATE */
+        .parse-error {
+            background: #2a0a0a;
+            border: 1px solid #991b1b;
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        /* STATS BAR */
+        .stats-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            gap: 24px;
+            font-size: 11px;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+        .stats-bar .stat strong { color: var(--text); margin-left: 4px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">p44 Tools</div>
+    <h1>EDI 214 Decoder</h1>
+    <div class="sub">Technical Integration Manager — Study Tool</div>
+</header>
+
+<div class="app">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <div class="panel-header">Input</div>
+
+        <!-- UPLOAD -->
+        <div class="upload-zone" id="uploadZone">
+            <span class="icon">📄</span>
+            <div class="title">Drop an EDI file here</div>
+            <div class="hint">.edi, .x12, .txt, or any EDI file</div>
+            <input type="file" id="fileInput" accept=".edi,.x12,.txt,.214,*">
+            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Choose File</button>
+        </div>
+
+        <!-- PASTE -->
+        <div class="paste-section">
+            <div class="paste-label">Or paste EDI content</div>
+            <textarea id="ediPaste" placeholder="ISA*00*          *00*          *ZZ*CARRIER123     *ZZ*PROJECT44...~&#10;GS*QM*CARRIER123*PROJECT44*...~&#10;ST*214*0001~&#10;..."></textarea>
+            <button class="btn-parse" onclick="parseFromPaste()">Decode EDI</button>
+            <button class="btn-sample" onclick="loadSample()">Load Sample EDI 214</button>
+            <button class="btn-clear" onclick="clearAll()">Clear</button>
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="summary-box" id="summaryBox" style="display:none;">
+            <div class="summary-title">Extracted Key Data</div>
+            <div id="summaryContent"></div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend">
+            <div class="legend-title">Colour Key</div>
+            <div class="legend-grid">
+                <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Critical (B10, AT7)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Status Event</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>Transaction</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Location</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>Loop / Reference</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#14b8a6"></span>Reference ID</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#6366f1"></span>Party Info</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span>Envelope</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <div class="panel-header" id="rightPanelHeader">Decoded Output</div>
+        <div class="stats-bar" id="statsBar" style="display:none;">
+            <div class="stat">Segments: <strong id="statSegments">0</strong></div>
+            <div class="stat">Status Events: <strong id="statEvents">0</strong></div>
+            <div class="stat">Transaction Sets: <strong id="statTS">0</strong></div>
+            <div class="stat">Version: <strong id="statVersion">—</strong></div>
+        </div>
+        <div class="segments-scroll" id="output">
+            <div class="empty-state">
+                <div class="big-icon">🔍</div>
+                <h2>No EDI loaded yet</h2>
+                <p>Upload an EDI file or paste your EDI content on the left to decode it. Segments will be highlighted, named, and explained here.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SEGMENT KNOWLEDGE BASE
+// ═══════════════════════════════════════════════════════
+const SEGMENT_KNOWLEDGE = {
+    ISA: {
+        name: 'Interchange Control Header',
+        theme: 'envelope',
+        importance: 'Envelope',
+        why: 'This is the outermost wrapper of the entire EDI file — like the envelope of a physical letter. It identifies who is sending the file (the carrier) and who is receiving it (project44 via Stedi), plus the date and time of transmission. If the sender or receiver IDs here are wrong, the entire file fails to route correctly.',
+        fields: [
+            { id: 'ISA01', name: 'Authorization Qualifier', req: 'M', desc: 'Usually "00" meaning no authorization info required' },
+            { id: 'ISA02', name: 'Authorization Information', req: 'M', desc: 'Usually blank spaces — placeholder if no auth used' },
+            { id: 'ISA03', name: 'Security Qualifier', req: 'M', desc: 'Usually "00" meaning no security info required' },
+            { id: 'ISA04', name: 'Security Information', req: 'M', desc: 'Usually blank spaces' },
+            { id: 'ISA05', name: 'Sender ID Qualifier', req: 'M', desc: 'Identifies the type of sender ID. "ZZ" = mutually defined (most common)' },
+            { id: 'ISA06', name: 'Interchange Sender ID', req: 'M', desc: 'The carrier\'s EDI identifier — how project44/Stedi knows who sent this file' },
+            { id: 'ISA07', name: 'Receiver ID Qualifier', req: 'M', desc: 'Identifies the type of receiver ID. "ZZ" = mutually defined' },
+            { id: 'ISA08', name: 'Interchange Receiver ID', req: 'M', desc: 'project44\'s EDI identifier — the destination address for this file' },
+            { id: 'ISA09', name: 'Interchange Date', req: 'M', desc: 'Date the file was created, in YYMMDD format' },
+            { id: 'ISA10', name: 'Interchange Time', req: 'M', desc: 'Time the file was created, in HHMM format' },
+            { id: 'ISA11', name: 'Repetition Separator', req: 'M', desc: 'Character used to separate repeated elements — usually "^"' },
+            { id: 'ISA12', name: 'Control Version Number', req: 'M', desc: 'EDI standard version. "00401" = version 4, release 1 (004010)' },
+            { id: 'ISA13', name: 'Interchange Control Number', req: 'M', desc: 'Unique number for this interchange — used for tracking and acknowledgement' },
+            { id: 'ISA14', name: 'Acknowledgement Requested', req: 'M', desc: '"1" = carrier wants a 997 acknowledgement back; "0" = no acknowledgement needed' },
+            { id: 'ISA15', name: 'Usage Indicator', req: 'M', desc: '"P" = Production (real data); "T" = Test (test data only). Critical to check during onboarding.' },
+            { id: 'ISA16', name: 'Component Element Separator', req: 'M', desc: 'Character used to separate sub-elements — usually ":"' },
+        ]
+    },
+    GS: {
+        name: 'Functional Group Header',
+        theme: 'envelope',
+        importance: 'Envelope',
+        why: 'Groups related transaction sets together within one interchange. Think of it as a folder inside the envelope. The functional identifier code "QM" tells the system this folder contains shipment status messages (214s).',
+        fields: [
+            { id: 'GS01', name: 'Functional Identifier Code', req: 'M', desc: '"QM" = Transportation Carrier Shipment Status (214 documents). This tells the receiver what type of documents are in this group.' },
+            { id: 'GS02', name: 'Application Sender Code', req: 'M', desc: 'Carrier\'s application identifier — often the same as ISA06 but can differ' },
+            { id: 'GS03', name: 'Application Receiver Code', req: 'M', desc: 'project44\'s application identifier' },
+            { id: 'GS04', name: 'Date', req: 'M', desc: 'Date in CCYYMMDD format (e.g. 20260309)' },
+            { id: 'GS05', name: 'Time', req: 'M', desc: 'Time in HHMM or HHMMSS format' },
+            { id: 'GS06', name: 'Group Control Number', req: 'M', desc: 'Unique number for this functional group — must match GE02' },
+            { id: 'GS07', name: 'Responsible Agency Code', req: 'M', desc: '"X" = Accredited Standards Committee X12 — confirms this uses the X12 standard' },
+            { id: 'GS08', name: 'Version/Release', req: 'M', desc: '"004010" = X12 version 4, release 10. project44\'s implementation guide is based on this version.' },
+        ]
+    },
+    ST: {
+        name: 'Transaction Set Header',
+        theme: 'boundary',
+        importance: 'Required',
+        why: 'Opens a single 214 transaction. The code "214" tells the receiving system exactly what type of document this is — a Transportation Carrier Shipment Status Message. Every transaction set must have a matching SE (trailer) with the same control number.',
+        fields: [
+            { id: 'ST01', name: 'Transaction Set ID Code', req: 'M', desc: '"214" = Transportation Carrier Shipment Status Message. This is the document type code.' },
+            { id: 'ST02', name: 'Transaction Set Control Number', req: 'M', desc: 'Unique reference for this transaction — must match the SE02 at the end of this transaction' },
+            { id: 'ST03', name: 'Implementation Convention', req: 'O', desc: 'Optional reference to a specific implementation guide — may reference the Stedi guide ID' },
+        ]
+    },
+    B10: {
+        name: 'Beginning Segment — Shipment Status',
+        theme: 'critical',
+        importance: 'CRITICAL',
+        why: 'This is one of the two most important segments in the entire document. It contains the BOL number (which shipment this update is about) and the SCAC code (which carrier is sending it). project44 uses these two values to find the matching shipment in the shipper\'s account and attach the status update to it. If either value is wrong, missing, or formatted differently from what\'s in project44 — even by one character — the update will arrive but go nowhere. This is the first place to check when a carrier says they\'re sending data but the shipper sees nothing.',
+        fields: [
+            { id: 'B10-01', name: 'Reference Identification (BOL)', req: 'M', desc: 'The Bill of Lading number — the primary key used to match this update to a shipment in project44. Must match exactly: same case, same leading zeros, same prefix/suffix as what the shipper entered.' },
+            { id: 'B10-02', name: 'Shipment ID Number', req: 'M', desc: 'A secondary shipment reference number — often the carrier\'s own internal tracking number' },
+            { id: 'B10-03', name: 'SCAC Code', req: 'M', desc: 'Standard Carrier Alpha Code — the 2–4 letter unique identifier for this carrier (e.g. UPSN, FXFE, ODFL). Must be registered in project44 and match exactly.' },
+            { id: 'B10-04', name: 'Inquiry Request Number', req: 'O', desc: 'Optional — used when this 214 is a response to a specific inquiry' },
+            { id: 'B10-05', name: 'Reference ID Qualifier', req: 'O', desc: 'Optional additional reference type' },
+            { id: 'B10-06', name: 'Reference Identification', req: 'O', desc: 'Optional additional reference value' },
+            { id: 'B10-07', name: 'Yes/No Indicator', req: 'O', desc: 'Optional flag for specific response scenarios' },
+        ]
+    },
+    MS3: {
+        name: 'Interline Information',
+        theme: 'other',
+        importance: 'Optional',
+        why: 'Identifies an interline carrier — a second carrier involved in moving the same shipment. Used when freight is handed off between carriers during transit.',
+        fields: [
+            { id: 'MS3-01', name: 'Standard Carrier Alpha Code', req: 'M', desc: 'SCAC of the interline (second) carrier' },
+            { id: 'MS3-02', name: 'Routing Sequence Code', req: 'M', desc: 'Indicates the carrier\'s position in the routing sequence' },
+            { id: 'MS3-03', name: 'City Name', req: 'O', desc: 'City where interline handoff occurs' },
+            { id: 'MS3-04', name: 'Transportation Method Code', req: 'O', desc: 'Mode of transport (e.g. T = Truck)' },
+        ]
+    },
+    LX: {
+        name: 'Line Number (Loop Counter)',
+        theme: 'loop',
+        importance: 'Required per loop',
+        why: 'This segment opens each new status event loop. A single 214 can contain multiple status events — for example, Picked Up and In Transit in the same file. The LX segment numbers each one sequentially (1, 2, 3...). Think of it as a bullet point number before each status update. Every AT7 (status event) must be preceded by an LX.',
+        fields: [
+            { id: 'LX01', name: 'Assigned Number', req: 'M', desc: 'Sequential counter for each status loop — starts at 1, increments by 1 for each status event' },
+        ]
+    },
+    AT7: {
+        name: 'Shipment Status Details',
+        theme: 'status',
+        importance: 'CRITICAL',
+        why: 'This is the most important segment in the 214 for operational purposes. It contains the actual status event — what happened to the shipment, when, and at what time. project44 reads this to know what milestone to record (Picked Up, In Transit, Delivered, etc.). If this segment is missing, the status code is unrecognised, the date is in the wrong format, or the timezone is absent — the milestone will not appear on the shipper\'s visibility dashboard. This is the first segment to validate when status updates arrive but milestones are not updating.',
+        fields: [
+            { id: 'AT7-01', name: 'Shipment Status Code', req: 'M', desc: 'What happened. Common codes: X3=Picked Up, D1=Delivered, AG=ETA Update, X1=Delivery Attempted, OA=Out for Delivery, AB=Arrived at Destination, A3=Returned to Shipper. Must be a code in project44\'s recognised mapping — an unknown code produces no milestone.' },
+            { id: 'AT7-02', name: 'Shipment Status or Reason Code', req: 'O', desc: 'Further detail about the status — reason for delay, exception code, etc.' },
+            { id: 'AT7-03', name: 'Appointment Status Code', req: 'O', desc: 'Used when the status relates to a delivery appointment' },
+            { id: 'AT7-04', name: 'Date', req: 'M', desc: 'Date the event occurred — must be in CCYYMMDD format (e.g. 20260309). Wrong format = event not processed.' },
+            { id: 'AT7-05', name: 'Time', req: 'M', desc: 'Time the event occurred — in HHMM format (e.g. 1430 = 2:30pm). Must be present with a timezone.' },
+            { id: 'AT7-06', name: 'Time Code (Timezone)', req: 'M', desc: 'Timezone for the event time. Examples: CT=Central, ET=Eastern, MT=Mountain, PT=Pacific, UT=UTC. Missing timezone = ambiguous event time, may cause processing failure.' },
+            { id: 'AT7-07', name: 'Event Code', req: 'O', desc: 'Additional event classification code if required' },
+        ]
+    },
+    MS1: {
+        name: 'Location (City/State)',
+        theme: 'location',
+        importance: 'Important',
+        why: 'Specifies where the status event occurred. project44 uses this to show the shipper the physical location of the shipment on their visibility map. Missing location data won\'t break the integration — the status event will still record — but the shipper will see no location pin on their dashboard.',
+        fields: [
+            { id: 'MS1-01', name: 'City Name', req: 'O', desc: 'City where the event occurred (e.g. CHICAGO)' },
+            { id: 'MS1-02', name: 'State or Province Code', req: 'O', desc: '2-letter state code (e.g. IL for Illinois)' },
+            { id: 'MS1-03', name: 'Country Code', req: 'O', desc: '2-letter country code (e.g. US)' },
+            { id: 'MS1-04', name: 'Longitude', req: 'O', desc: 'GPS longitude — enables precise map pinning if provided' },
+            { id: 'MS1-05', name: 'Latitude', req: 'O', desc: 'GPS latitude — enables precise map pinning if provided' },
+            { id: 'MS1-06', name: 'Direction Code', req: 'O', desc: 'Direction indicator for the coordinates' },
+        ]
+    },
+    MS2: {
+        name: 'Equipment Identification',
+        theme: 'location',
+        importance: 'Optional',
+        why: 'Identifies the trailer or container carrying the freight. Useful for physically locating equipment and matching freight to specific assets. Not typically a failure point — if absent, the status event still records correctly.',
+        fields: [
+            { id: 'MS2-01', name: 'Standard Carrier Alpha Code', req: 'O', desc: 'SCAC of the equipment owner (may differ from the operating carrier)' },
+            { id: 'MS2-02', name: 'Equipment Number', req: 'M', desc: 'The trailer or container number (e.g. TRL4521)' },
+            { id: 'MS2-03', name: 'Equipment Description Code', req: 'O', desc: 'Type of equipment — TL=Trailer, CN=Container, etc.' },
+            { id: 'MS2-04', name: 'Equipment Use Code', req: 'O', desc: 'How the equipment is being used in this movement' },
+        ]
+    },
+    L11: {
+        name: 'Reference Identification',
+        theme: 'reference',
+        importance: 'Important',
+        why: 'Contains additional reference numbers related to the shipment or status event. In LTL (Less Than Truckload) shipments with multiple stops, this is how project44 knows which specific stop this status event belongs to. Without correct L11 data in a multi-stop LTL shipment, status events may attach to the wrong stop.',
+        fields: [
+            { id: 'L11-01', name: 'Reference Identification', req: 'M', desc: 'The actual reference number value (e.g. a customer PO number, stop sequence number, or PRO number)' },
+            { id: 'L11-02', name: 'Reference ID Qualifier', req: 'M', desc: 'Identifies what type of number L11-01 is. Common: BM=Bill of Lading, PO=Purchase Order, SI=Shipper\'s ID, CN=Carrier\'s Reference Number' },
+            { id: 'L11-03', name: 'Description', req: 'O', desc: 'Free text description of the reference — optional' },
+        ]
+    },
+    MAN: {
+        name: 'Marks and Numbers',
+        theme: 'other',
+        importance: 'Optional',
+        why: 'Contains container or package marking information — serial numbers, container IDs, or other physical identifiers. Useful for matching physical shipments to digital records.',
+        fields: [
+            { id: 'MAN-01', name: 'Marks and Numbers Qualifier', req: 'M', desc: 'Type of marking — GM=SSCC/EAN Container Code, CP=Container Packaging ID, etc.' },
+            { id: 'MAN-02', name: 'Marks and Numbers', req: 'M', desc: 'The actual mark or number value' },
+        ]
+    },
+    Q7: {
+        name: 'Lading Exception Status',
+        theme: 'other',
+        importance: 'Optional',
+        why: 'Reports exceptions or problems with the freight itself — damage, shortage, overage. Important for claims and exception management but not part of the standard status flow.',
+        fields: [
+            { id: 'Q7-01', name: 'Lading Exception Code', req: 'M', desc: 'Type of exception — OS=Overage/Shortage/Damage, etc.' },
+            { id: 'Q7-02', name: 'Packaging Form Code', req: 'O', desc: 'Type of packaging affected' },
+            { id: 'Q7-03', name: 'Lading Quantity', req: 'O', desc: 'Quantity of affected items' },
+        ]
+    },
+    AT8: {
+        name: 'Weight and Packaging Data',
+        theme: 'other',
+        importance: 'Optional',
+        why: 'Contains weight and handling unit information at the event level. Supports weight-based SLA monitoring and freight audit processes.',
+        fields: [
+            { id: 'AT8-01', name: 'Weight Qualifier', req: 'O', desc: 'Type of weight being reported (G=Gross, N=Net)' },
+            { id: 'AT8-02', name: 'Weight Unit Code', req: 'O', desc: 'Unit of measurement — L=Pounds, K=Kilograms' },
+            { id: 'AT8-03', name: 'Weight', req: 'O', desc: 'Numeric weight value' },
+            { id: 'AT8-04', name: 'Packaging Form Code', req: 'O', desc: 'Type of packaging unit' },
+            { id: 'AT8-05', name: 'Quantity', req: 'O', desc: 'Number of handling units' },
+        ]
+    },
+    K1: {
+        name: 'Remarks',
+        theme: 'other',
+        importance: 'Optional',
+        why: 'Free-text comments about the shipment or status event. Often contains driver notes, delay reasons, or customer-facing messages. Not processed by project44 as structured data but may be visible in notes fields.',
+        fields: [
+            { id: 'K1-01', name: 'Free Form Information', req: 'M', desc: 'Any free text — driver notes, delay explanations, delivery instructions, etc.' },
+            { id: 'K1-02', name: 'Free Form Information 2', req: 'O', desc: 'Additional free text if needed' },
+        ]
+    },
+    AT5: {
+        name: 'Bill of Lading Handling',
+        theme: 'other',
+        importance: 'Optional',
+        why: 'Specifies special handling requirements for the freight — hazmat, temperature-controlled, etc. Informational at the status level.',
+        fields: [
+            { id: 'AT5-01', name: 'Special Handling Code', req: 'O', desc: 'Type of special handling required' },
+            { id: 'AT5-02', name: 'Special Services Code', req: 'O', desc: 'Additional service codes' },
+            { id: 'AT5-03', name: 'Description', req: 'O', desc: 'Free text description of handling requirements' },
+        ]
+    },
+    N1: {
+        name: 'Party Identification',
+        theme: 'party',
+        importance: 'Optional',
+        why: 'Identifies a party involved in the shipment — shipper, consignee, bill-to party, etc. The entity type is specified by a qualifier code. This information helps project44 maintain accurate party records and supports invoicing and documentation.',
+        fields: [
+            { id: 'N1-01', name: 'Entity Identifier Code', req: 'M', desc: 'Who this party is. Common codes: SF=Ship From, ST=Ship To, BT=Bill To, CN=Consignee, SH=Shipper' },
+            { id: 'N1-02', name: 'Name', req: 'O', desc: 'The name of this party (e.g. "Acme Manufacturing Inc.")' },
+            { id: 'N1-03', name: 'ID Code Qualifier', req: 'O', desc: 'Type of ID in N1-04 — 92=Mutually defined, 9=DUNS Number' },
+            { id: 'N1-04', name: 'Identification Code', req: 'O', desc: 'The actual ID number for this party' },
+        ]
+    },
+    N2: {
+        name: 'Additional Name Information',
+        theme: 'party',
+        importance: 'Optional',
+        why: 'Provides additional name lines for a party identified in N1 — for example, a division name or attention line.',
+        fields: [
+            { id: 'N2-01', name: 'Name', req: 'M', desc: 'Additional name or attention line' },
+            { id: 'N2-02', name: 'Name 2', req: 'O', desc: 'Second additional name line' },
+        ]
+    },
+    N3: {
+        name: 'Address Information',
+        theme: 'party',
+        importance: 'Optional',
+        why: 'The street address for the party identified in N1. Used for documentation and compliance purposes.',
+        fields: [
+            { id: 'N3-01', name: 'Address Line 1', req: 'M', desc: 'Street address, first line' },
+            { id: 'N3-02', name: 'Address Line 2', req: 'O', desc: 'Suite, unit, or building number' },
+        ]
+    },
+    N4: {
+        name: 'Geographic Location',
+        theme: 'party',
+        importance: 'Optional',
+        why: 'City, state, and postal code for the party address. Combined with N3, this completes the full address record for the party.',
+        fields: [
+            { id: 'N4-01', name: 'City Name', req: 'O', desc: 'City of the party\'s address' },
+            { id: 'N4-02', name: 'State or Province Code', req: 'O', desc: '2-letter state code' },
+            { id: 'N4-03', name: 'Postal Code', req: 'O', desc: 'ZIP or postal code' },
+            { id: 'N4-04', name: 'Country Code', req: 'O', desc: '2-letter country code' },
+        ]
+    },
+    G62: {
+        name: 'Date/Time',
+        theme: 'other',
+        importance: 'Restricted',
+        why: 'Important note: In project44\'s EDI 214 implementation guide, G62 is explicitly PROHIBITED for reporting status dates and times. Status dates and times must always go in the AT7 segment. If you see G62 used for event timestamps in a carrier\'s file, this is a non-conformance that will likely cause issues.',
+        fields: [
+            { id: 'G62-01', name: 'Date Qualifier', req: 'O', desc: 'Type of date being specified' },
+            { id: 'G62-02', name: 'Date', req: 'O', desc: 'Date value' },
+            { id: 'G62-03', name: 'Time Qualifier', req: 'O', desc: 'Type of time being specified' },
+            { id: 'G62-04', name: 'Time', req: 'O', desc: 'Time value' },
+            { id: 'G62-05', name: 'Time Code', req: 'O', desc: 'Timezone code' },
+        ]
+    },
+    OID: {
+        name: 'Order Information Detail',
+        theme: 'reference',
+        importance: 'Optional',
+        why: 'Provides order-level details within a status loop. Used in LTL and multi-order shipments to associate status events with specific purchase orders.',
+        fields: [
+            { id: 'OID-01', name: 'Reference ID Qualifier', req: 'O', desc: 'Type of order reference' },
+            { id: 'OID-02', name: 'Reference Identification', req: 'O', desc: 'Order number or PO reference' },
+            { id: 'OID-03', name: 'Purchase Order Number', req: 'O', desc: 'Customer purchase order number' },
+        ]
+    },
+    SE: {
+        name: 'Transaction Set Trailer',
+        theme: 'boundary',
+        importance: 'Required',
+        why: 'Closes the 214 transaction set opened by ST. Contains a count of all segments in this transaction (including ST and SE themselves) and the control number that must match ST02. If the segment count is wrong — because a segment was added or removed — the entire transaction will fail validation. This is automatically calculated by the carrier\'s EDI system but worth checking when debugging.',
+        fields: [
+            { id: 'SE01', name: 'Segment Count', req: 'M', desc: 'Total number of segments in this transaction set, including ST and SE. Must be accurate — any discrepancy causes a validation failure.' },
+            { id: 'SE02', name: 'Transaction Set Control Number', req: 'M', desc: 'Must exactly match the control number in ST02 that opened this transaction' },
+        ]
+    },
+    GE: {
+        name: 'Functional Group Trailer',
+        theme: 'envelope',
+        importance: 'Envelope',
+        why: 'Closes the functional group opened by GS. The transaction set count here must match the number of ST/SE pairs inside this group, and the control number must match GS06.',
+        fields: [
+            { id: 'GE01', name: 'Number of Transaction Sets', req: 'M', desc: 'How many ST/SE pairs (individual 214 transactions) are in this functional group' },
+            { id: 'GE02', name: 'Group Control Number', req: 'M', desc: 'Must match GS06 exactly' },
+        ]
+    },
+    IEA: {
+        name: 'Interchange Control Trailer',
+        theme: 'envelope',
+        importance: 'Envelope',
+        why: 'Closes the entire interchange envelope opened by ISA. The functional group count must match the number of GS/GE pairs in the file, and the control number must match ISA13.',
+        fields: [
+            { id: 'IEA01', name: 'Number of Functional Groups', req: 'M', desc: 'How many GS/GE pairs are in this interchange' },
+            { id: 'IEA02', name: 'Interchange Control Number', req: 'M', desc: 'Must match ISA13 exactly — this closes the loop opened by ISA' },
+        ]
+    },
+};
+
+// FALLBACK for unknown segments
+function getUnknownSegment(id) {
+    return {
+        name: 'Unknown Segment',
+        theme: 'other',
+        importance: 'Unknown',
+        why: `Segment "${id}" is not in this decoder's knowledge base. It may be a custom segment, a less common X12 segment, or a data entry within a segment that was parsed incorrectly. Check the raw EDI line above.`,
+        fields: []
+    };
+}
+
+// STATUS CODE MAP
+const STATUS_CODES = {
+    X3: 'Picked Up / Shipment Picked Up',
+    X1: 'Delivery Attempted — No One Available',
+    X2: 'Refused by Consignee',
+    X4: 'Delivery Not Completed',
+    X5: 'Delivery Completed (Partial)',
+    X6: 'En Route to Delivery',
+    D1: 'Delivered — All Items',
+    D2: 'Delivered — Partial',
+    AG: 'Estimated Delivery Date / ETA Update',
+    AM: 'Loaded on Truck',
+    AB: 'Arrived at Delivery Location',
+    OA: 'Out for Delivery',
+    A1: 'Arrived at Carrier Terminal',
+    A2: 'Arrived at Destination',
+    A3: 'Returned to Shipper',
+    A7: 'Refused — Returned',
+    AE: 'Arrived at Carrier Facility',
+    AF: 'Freight in Good Order — Arrived',
+    AH: 'Notification — Arrived',
+    AP: 'Available for Pickup',
+    AR: 'Rail Arrived at Destination',
+    AV: 'Available',
+    B6: 'Estimated to Arrive at Carrier Terminal',
+    CA: 'Shipment Cancelled',
+    CL: 'Cleared Customs',
+    CP: 'Complete',
+    CS: 'Customer Service',
+    E1: 'Estimated to Arrive at Customer',
+    J1: 'Loaded on Rail Car',
+    K1: 'Received from Prior Carrier',
+    L1: 'Loading',
+    NS: 'Not Yet Picked Up',
+    OO: 'Operator Out of Service Area',
+    P1: 'Pickup Completed',
+    PR: 'U.S. Customs Clearance Delay',
+    R1: 'Returned to Shipper — Refused',
+    RM: 'Redelivery',
+    S1: 'Shipment has Completed Final Delivery',
+    SD: 'Delivered to Agent',
+    SF: 'Stored at Facility — Freight',
+    TP: 'Trailer Pickup at Shipper',
+    TR: 'Transfer',
+    X7: 'Attempted Delivery',
+    X8: 'Carrier Delay',
+    X9: 'Held — At Shipper\'s Request',
+};
+
+// TIMEZONE MAP
+const TZ_CODES = {
+    AD: 'Atlantic Daylight', AS: 'Atlantic Standard',
+    CD: 'Central Daylight', CS: 'Central Standard', CT: 'Central',
+    ED: 'Eastern Daylight', ES: 'Eastern Standard', ET: 'Eastern',
+    GM: 'Greenwich Mean Time',
+    HD: 'Hawaii-Aleutian Daylight', HS: 'Hawaii-Aleutian Standard',
+    MD: 'Mountain Daylight', MS: 'Mountain Standard', MT: 'Mountain',
+    ND: 'Newfoundland Daylight', NS2: 'Newfoundland Standard',
+    PD: 'Pacific Daylight', PS: 'Pacific Standard', PT: 'Pacific',
+    UT: 'Universal Time (UTC)',
+};
+
+// REF ID QUALIFIER MAP
+const REF_QUALIFIERS = {
+    BM: 'Bill of Lading', BOL: 'Bill of Lading', CN: "Carrier's Reference Number",
+    CQ: 'Customs Entry Number', D2: 'Delivery Appointment Number',
+    IL: 'Internal Customer Number', IT: 'Importer\'s Reference Number',
+    MB: 'Master Bill of Lading', MH: 'Manifest Key Number',
+    OQ: 'Order Quantity', PO: 'Purchase Order Number',
+    PR: 'Purchasing Reference Number', PU: 'Pickup Reference Number',
+    RB: 'Rate Code Number', SI: "Shipper's Identifying Number",
+    SN: 'Seal Number', SO: 'Sales Order Number',
+    WY: 'Waybill', '2I': 'Tracking Number', AW: 'Air Waybill Number',
+    CR: 'Customer Reference Number',
+};
+
+// ═══════════════════════════════════════════════════════
+// PARSING ENGINE
+// ═══════════════════════════════════════════════════════
+function parseEDI(raw) {
+    // Normalise line endings and remove blank lines
+    let text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+
+    // Detect segment terminator (usually ~)
+    let segTerminator = '~';
+
+    // Split into segments
+    let rawSegments = text.split(segTerminator)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+    if (rawSegments.length === 0) throw new Error('No EDI segments found. Make sure your EDI uses ~ as a segment terminator.');
+
+    // Detect element separator from ISA (position 3)
+    let elemSep = '*';
+    if (rawSegments[0].startsWith('ISA')) {
+        elemSep = rawSegments[0][3];
+    }
+
+    return rawSegments.map((raw, idx) => {
+        const elements = raw.split(elemSep);
+        const id = elements[0].trim().toUpperCase();
+        return { id, elements, raw, index: idx };
+    });
+}
+
+// ═══════════════════════════════════════════════════════
+// SUMMARY EXTRACTION
+// ═══════════════════════════════════════════════════════
+function extractSummary(segments) {
+    const summary = {
+        bol: null, scac: null, sender: null, receiver: null,
+        version: null, usageIndicator: null,
+        statusEvents: [], errors: []
+    };
+
+    segments.forEach(seg => {
+        if (seg.id === 'ISA') {
+            summary.sender = (seg.elements[6] || '').trim();
+            summary.receiver = (seg.elements[8] || '').trim();
+            summary.version = seg.elements[12];
+            summary.usageIndicator = seg.elements[15];
+        }
+        if (seg.id === 'B10') {
+            summary.bol = seg.elements[1] || null;
+            summary.scac = seg.elements[3] || null;
+        }
+        if (seg.id === 'AT7') {
+            const code = seg.elements[1] || '';
+            const date = seg.elements[4] || '';
+            const time = seg.elements[5] || '';
+            const tz = seg.elements[6] || '';
+            summary.statusEvents.push({ code, label: STATUS_CODES[code] || 'Unknown code — not in project44 mapping', date, time, tz });
+        }
+    });
+
+    return summary;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER SUMMARY PANEL
+// ═══════════════════════════════════════════════════════
+function renderSummary(summary) {
+    const box = document.getElementById('summaryBox');
+    const content = document.getElementById('summaryContent');
+    box.style.display = 'block';
+
+    let html = '';
+
+    const bolClass = summary.bol ? 'ok' : 'bad';
+    html += `<div class="summary-row"><span class="key">BOL Number</span><span class="val ${bolClass}">${summary.bol || 'NOT FOUND'}</span></div>`;
+
+    const scacClass = summary.scac ? 'ok' : 'bad';
+    html += `<div class="summary-row"><span class="key">SCAC Code</span><span class="val ${scacClass}">${summary.scac || 'NOT FOUND'}</span></div>`;
+
+    html += `<div class="summary-row"><span class="key">Sender ID</span><span class="val">${summary.sender || '—'}</span></div>`;
+    html += `<div class="summary-row"><span class="key">Receiver ID</span><span class="val">${summary.receiver || '—'}</span></div>`;
+
+    if (summary.usageIndicator) {
+        const isProd = summary.usageIndicator.trim() === 'P';
+        html += `<div class="summary-row"><span class="key">Usage</span><span class="val ${isProd ? 'ok' : 'warn'}">${isProd ? 'PRODUCTION' : 'TEST'}</span></div>`;
+    }
+
+    if (summary.statusEvents.length > 0) {
+        html += `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:8px;">Status Events (${summary.statusEvents.length})</div>`;
+        summary.statusEvents.forEach((ev, i) => {
+            const isKnown = !!STATUS_CODES[ev.code];
+            html += `<div style="margin-bottom:8px;padding:8px;background:var(--bg);border-radius:5px;border-left:3px solid ${isKnown ? 'var(--amber)' : 'var(--red)'}">
+                <div style="font-size:11px;font-weight:700;color:${isKnown ? 'var(--amber)' : 'var(--red)'}">${ev.code} — ${ev.label}</div>
+                <div style="font-size:10.5px;color:var(--text-dim);margin-top:3px;">${ev.date ? formatDate(ev.date) : '?'} ${ev.time ? formatTime(ev.time) : ''} ${ev.tz ? (TZ_CODES[ev.tz] || ev.tz) : ''}</div>
+            </div>`;
+        });
+    } else {
+        html += `<div class="summary-row"><span class="key">Status Events</span><span class="val bad">NONE FOUND</span></div>`;
+    }
+
+    content.innerHTML = html;
+}
+
+function formatDate(d) {
+    if (d.length === 8) return `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+    if (d.length === 6) return `20${d.slice(0,2)}-${d.slice(2,4)}-${d.slice(4,6)}`;
+    return d;
+}
+function formatTime(t) {
+    if (t.length >= 4) return `${t.slice(0,2)}:${t.slice(2,4)}`;
+    return t;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER SEGMENTS
+// ═══════════════════════════════════════════════════════
+function renderSegments(segments, summary) {
+    const output = document.getElementById('output');
+    const statsBar = document.getElementById('statsBar');
+
+    // Stats
+    const eventCount = segments.filter(s => s.id === 'AT7').length;
+    const tsCount = segments.filter(s => s.id === 'ST').length;
+    const version = summary.version || '—';
+    document.getElementById('statSegments').textContent = segments.length;
+    document.getElementById('statEvents').textContent = eventCount;
+    document.getElementById('statTS').textContent = tsCount;
+    document.getElementById('statVersion').textContent = version;
+    statsBar.style.display = 'flex';
+
+    // Alerts
+    let alertsHTML = '';
+    if (!summary.bol) alertsHTML += `<div class="alert alert-error">⚠️ <div><strong>No BOL found in B10.</strong> The Bill of Lading is missing. project44 will not be able to match this update to any shipment.</div></div>`;
+    if (!summary.scac) alertsHTML += `<div class="alert alert-error">⚠️ <div><strong>No SCAC found in B10.</strong> The carrier code is missing. project44 cannot identify which carrier sent this update.</div></div>`;
+    if (eventCount === 0) alertsHTML += `<div class="alert alert-error">⚠️ <div><strong>No AT7 status events found.</strong> This 214 contains no status events. The shipper will see no milestone updates.</div></div>`;
+    summary.statusEvents.forEach(ev => {
+        if (!STATUS_CODES[ev.code]) alertsHTML += `<div class="alert alert-warn">⚠️ <div><strong>Unrecognised status code "${ev.code}" in AT7.</strong> This code is not in the standard mapping. project44 may not process this milestone. Check the carrier is using a supported AT7 status code.</div></div>`;
+        if (!ev.tz) alertsHTML += `<div class="alert alert-warn">⚠️ <div><strong>Missing timezone in AT7.</strong> A status event has no timezone specified. This may cause the event timestamp to be processed incorrectly.</div></div>`;
+    });
+    if (summary.usageIndicator && summary.usageIndicator.trim() !== 'P') {
+        alertsHTML += `<div class="alert alert-warn">⚠️ <div><strong>This is a TEST file (ISA15 = "${summary.usageIndicator.trim()}").</strong> ISA15 should be "P" for production data. Test files may be handled differently by project44.</div></div>`;
+    }
+    if (alertsHTML === '' && summary.bol && summary.scac && eventCount > 0) {
+        alertsHTML = `<div class="alert alert-ok">✅ <div><strong>File looks structurally complete.</strong> BOL and SCAC are present. ${eventCount} status event(s) found with recognised codes. Verify BOL and SCAC match exactly with what is in project44.</div></div>`;
+    }
+
+    // Group segments into loops
+    let html = alertsHTML;
+    let inLoop = false;
+    let loopHTML = '';
+
+    for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
+        const info = SEGMENT_KNOWLEDGE[seg.id] || getUnknownSegment(seg.id);
+
+        // Start loop group at LX
+        if (seg.id === 'LX') {
+            if (inLoop) { html += `</div>`; } // close previous loop
+            html += `<div class="loop-group"><div class="loop-group-label">Status Loop ${seg.elements[1] || i}</div>`;
+            inLoop = true;
+        }
+        // End loop group at non-loop segments
+        if (inLoop && ['SE', 'GE', 'IEA', 'GS', 'ST'].includes(seg.id)) {
+            html += `</div>`;
+            inLoop = false;
+        }
+
+        html += renderSegmentCard(seg, info, i);
+    }
+    if (inLoop) html += `</div>`;
+
+    output.innerHTML = html;
+}
+
+function renderSegmentCard(seg, info, idx) {
+    const cardId = `seg-${idx}`;
+    const elements = seg.elements;
+
+    // Build fields rows
+    let fieldsHTML = '';
+    if (info.fields.length > 0) {
+        fieldsHTML = `<table class="fields-table">
+            <thead><tr><th>#</th><th>Field ID</th><th>Value</th><th>Field Name</th><th>Req</th><th>Description</th></tr></thead>
+            <tbody>`;
+        info.fields.forEach((f, fi) => {
+            const val = elements[fi + 1];
+            const hasVal = val !== undefined && val !== '';
+            const displayVal = hasVal ? escHTML(val) : '(empty)';
+            const valClass = hasVal ? getFieldValueColor(seg.id, fi + 1, val) : 'empty';
+
+            // Enrich value display
+            let enriched = displayVal;
+            if (seg.id === 'AT7' && fi === 0 && hasVal) {
+                const label = STATUS_CODES[val];
+                if (label) enriched += ` <span style="color:var(--text-dim);font-weight:400;font-family:inherit;font-size:10.5px;">— ${label}</span>`;
+                else enriched += ` <span style="color:var(--red);font-weight:400;font-family:inherit;font-size:10.5px;">— UNRECOGNISED CODE</span>`;
+            }
+            if (seg.id === 'AT7' && fi === 5 && hasVal) {
+                const tzLabel = TZ_CODES[val];
+                if (tzLabel) enriched += ` <span style="color:var(--text-dim);font-weight:400;font-family:inherit;font-size:10.5px;">— ${tzLabel}</span>`;
+            }
+            if ((seg.id === 'AT7' && fi === 3) || (seg.id === 'ISA' && fi === 8)) {
+                if (hasVal && val.length === 8) enriched = `${val.slice(0,4)}-${val.slice(4,6)}-${val.slice(6,8)}`;
+                if (hasVal && val.length === 6) enriched = `20${val.slice(0,2)}-${val.slice(2,4)}-${val.slice(4,6)}`;
+            }
+            if (seg.id === 'L11' && fi === 1 && hasVal) {
+                const refLabel = REF_QUALIFIERS[val];
+                if (refLabel) enriched += ` <span style="color:var(--text-dim);font-weight:400;font-family:inherit;font-size:10.5px;">— ${refLabel}</span>`;
+            }
+
+            fieldsHTML += `<tr>
+                <td class="field-pos">${fi + 1}</td>
+                <td class="field-pos">${f.id}</td>
+                <td class="field-value ${valClass}">${enriched}</td>
+                <td class="field-name">${f.name}</td>
+                <td><span class="field-req req-${f.req}">${f.req === 'M' ? 'Required' : 'Optional'}</span></td>
+                <td class="field-desc">${f.desc}</td>
+            </tr>`;
+        });
+        // Any extra elements not in knowledge base
+        for (let ei = info.fields.length + 1; ei < elements.length; ei++) {
+            const val = elements[ei];
+            if (val && val.trim()) {
+                fieldsHTML += `<tr>
+                    <td class="field-pos">${ei}</td>
+                    <td class="field-pos" style="color:var(--text-dim)">—</td>
+                    <td class="field-value">${escHTML(val)}</td>
+                    <td class="field-name" style="color:var(--text-dim)">Additional element</td>
+                    <td></td>
+                    <td class="field-desc" style="color:var(--text-dim)">This element is not defined in this decoder's knowledge base for segment ${seg.id}.</td>
+                </tr>`;
+            }
+        }
+        fieldsHTML += `</tbody></table>`;
+    } else {
+        // No known fields — show raw elements
+        if (elements.length > 1) {
+            fieldsHTML = `<table class="fields-table"><thead><tr><th>#</th><th>Value</th><th>Notes</th></tr></thead><tbody>`;
+            elements.slice(1).forEach((val, fi) => {
+                if (val !== undefined) {
+                    fieldsHTML += `<tr><td class="field-pos">${fi+1}</td><td class="field-value">${escHTML(val) || '<span class="field-value empty">(empty)</span>'}</td><td class="field-desc" style="color:var(--text-dim)">Field definition not available for this segment</td></tr>`;
+                }
+            });
+            fieldsHTML += `</tbody></table>`;
+        }
+    }
+
+    return `
+    <div class="segment-card theme-${info.theme}" id="${cardId}" onclick="toggleCard('${cardId}')">
+        <div class="seg-header">
+            <span class="seg-id">${escHTML(seg.id)}</span>
+            <span class="seg-name">${info.name}</span>
+            <span class="seg-brief">${getSegBrief(seg, info)}</span>
+            <span class="seg-importance">${info.importance}</span>
+            <span class="seg-toggle">▼</span>
+        </div>
+        <div class="seg-detail">
+            <div class="seg-why"><strong>Why this matters:</strong> ${info.why}</div>
+            ${fieldsHTML}
+            <div class="seg-raw"><strong>Raw:</strong> ${escHTML(seg.raw)}~</div>
+        </div>
+    </div>`;
+}
+
+function getSegBrief(seg, info) {
+    const e = seg.elements;
+    if (seg.id === 'B10') return `BOL: ${e[1] || '?'} · SCAC: ${e[3] || '?'}`;
+    if (seg.id === 'AT7') {
+        const code = e[1] || '?';
+        const label = STATUS_CODES[code] || 'Unknown code';
+        return `${code} — ${label}`;
+    }
+    if (seg.id === 'MS1') return `${e[1] || ''}${e[2] ? ', ' + e[2] : ''}${e[3] ? ' ' + e[3] : ''}`.trim() || 'No location data';
+    if (seg.id === 'MS2') return `Equipment: ${e[2] || '?'} (Owner SCAC: ${e[1] || '?'})`;
+    if (seg.id === 'LX') return `Loop #${e[1] || '?'}`;
+    if (seg.id === 'L11') {
+        const refLabel = REF_QUALIFIERS[e[2]] || e[2] || '';
+        return `${refLabel}: ${e[1] || '?'}`;
+    }
+    if (seg.id === 'ISA') return `${(e[6] || '').trim()} → ${(e[8] || '').trim()}`;
+    if (seg.id === 'GS') return `Functional ID: ${e[1] || '?'} · Version: ${e[8] || '?'}`;
+    if (seg.id === 'ST') return `Type: ${e[1] || '?'} · Control: ${e[2] || '?'}`;
+    if (seg.id === 'SE') return `${e[1] || '?'} segments · Control: ${e[2] || '?'}`;
+    if (seg.id === 'N1') return `${e[2] || ''} (${e[1] || '?'})`;
+    if (seg.id === 'K1') return (e[1] || '').substring(0, 60) + ((e[1] || '').length > 60 ? '...' : '');
+    return e.slice(1).filter(Boolean).join(' · ').substring(0, 70);
+}
+
+function getFieldValueColor(segId, pos, val) {
+    if (segId === 'B10' && (pos === 1 || pos === 3)) return 'ok';
+    if (segId === 'AT7' && pos === 1) return STATUS_CODES[val] ? 'ok' : 'bad';
+    if (segId === 'ISA' && pos === 15) return val.trim() === 'P' ? 'ok' : 'warn';
+    return '';
+}
+
+function escHTML(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleCard(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('expanded');
+}
+
+// ═══════════════════════════════════════════════════════
+// ENTRY POINTS
+// ═══════════════════════════════════════════════════════
+function parseEDIContent(raw) {
+    const output = document.getElementById('output');
+    try {
+        const segments = parseEDI(raw);
+        const summary = extractSummary(segments);
+        renderSummary(summary);
+        renderSegments(segments, summary);
+    } catch(e) {
+        document.getElementById('summaryBox').style.display = 'none';
+        document.getElementById('statsBar').style.display = 'none';
+        output.innerHTML = `<div class="parse-error"><strong>Could not parse EDI:</strong><br><br>${e.message}<br><br>Make sure your EDI file uses ~ as the segment terminator and * as the element separator.</div>`;
+    }
+}
+
+function parseFromPaste() {
+    const raw = document.getElementById('ediPaste').value.trim();
+    if (!raw) return;
+    parseEDIContent(raw);
+}
+
+function clearAll() {
+    document.getElementById('ediPaste').value = '';
+    document.getElementById('summaryBox').style.display = 'none';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('output').innerHTML = `<div class="empty-state"><div class="big-icon">🔍</div><h2>No EDI loaded yet</h2><p>Upload an EDI file or paste your EDI content on the left to decode it. Segments will be highlighted, named, and explained here.</p></div>`;
+}
+
+function loadSample() {
+    const sample = `ISA*00*          *00*          *ZZ*CARRIER123     *ZZ*PROJECT44      *260309*1200*^*00401*000000001*0*P*:~GS*QM*CARRIER123*PROJECT44*20260309*1200*1*X*004010~ST*214*0001~B10*BOL123456789*TRK987654*UPSN~LX*1~AT7*X3*NS**20260309*1000*CT~MS1*CHICAGO*IL*US~MS2*UPSN*TRL4521~L11*PO-2026-0042*PO~LX*2~AT7*D1*NS**20260310*1430*CT~MS1*DETROIT*MI*US~MS2*UPSN*TRL4521~K1*Delivered to dock door 7. Signed by J. Smith.~SE*13*0001~GE*1*1~IEA*1*000000001~`;
+    document.getElementById('ediPaste').value = sample;
+    parseEDIContent(sample);
+}
+
+// ═══════════════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const content = ev.target.result;
+        document.getElementById('ediPaste').value = content;
+        parseEDIContent(content);
+    };
+    reader.readAsText(file);
+});
+
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        document.getElementById('ediPaste').value = ev.target.result;
+        parseEDIContent(ev.target.result);
+    };
+    reader.readAsText(file);
+});
+
+// Parse on Enter in paste area (Ctrl+Enter)
+document.getElementById('ediPaste').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.ctrlKey) parseFromPaste();
+});
+</script>
+</body>
+</html>

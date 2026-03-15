@@ -1,0 +1,23 @@
+carrier_id,carrier_name,provider_type,integration_type,connection_direction,push_interval_minutes,integration_status,onboarding_start_date,go_live_date,last_sync,last_push_received,total_shipments,tracked_shipments,milestones_expected,milestones_received,error_count_30d,last_error_date,issue_reported_date,issue_resolved_date
+C001,XPO Logistics,carrier,API,push,15,active,2026-01-05,2026-01-18,,2026-03-15 21:00:00,1240,1215,6200,6076,2,2026-03-01,,
+C002,Ryder Transportation,carrier,API,push,15,active,2026-01-10,2026-01-28,,2026-03-15 20:55:00,870,853,4350,4263,0,,,
+C003,Old Dominion Freight,carrier,EDI,push,240,active,2026-01-15,2026-02-20,,2026-03-15 18:00:00,540,491,2700,2484,8,2026-03-10,2026-03-08,2026-03-11
+C004,Werner Enterprises,carrier,API,push,15,active,2026-02-01,2026-02-12,,2026-03-15 21:10:00,980,970,4900,4851,1,2026-02-28,,
+C005,Estes Express Lines,carrier,EDI,push,240,active,2025-12-20,2026-02-05,,2026-03-13 14:00:00,310,248,1550,1209,12,2026-03-12,2026-03-10,
+C006,J.B. Hunt Transport,carrier,API,push,15,active,2026-01-22,2026-02-01,,2026-03-15 21:05:00,1580,1564,7900,7821,3,2026-03-05,,
+C007,Knight-Swift,carrier,Flat File,push,720,active,2026-01-08,2026-02-10,,2026-03-15 14:00:00,420,378,2100,1911,6,2026-03-09,2026-03-07,2026-03-10
+C008,Schneider National,carrier,API,push,15,onboarding,2026-02-20,,,2026-03-15 20:50:00,120,105,600,564,0,,,
+C009,Saia LTL Freight,carrier,EDI,push,240,error,2025-11-15,2025-12-30,,2026-03-08 12:00:00,290,174,1450,812,27,2026-03-13,2026-03-06,
+C010,Forward Air,carrier,API,push,15,active,2026-02-05,2026-02-18,,2026-03-15 21:08:00,640,634,3200,3168,0,,,
+C011,AAA Cooper Transportation,carrier,Flat File,push,720,onboarding,2026-03-01,,,2026-03-15 16:00:00,45,38,225,200,1,2026-03-11,,
+C012,Southeastern Freight Lines,carrier,EDI,push,240,active,2025-10-01,2025-11-15,,2026-03-15 06:00:00,195,148,975,692,15,2026-03-12,2026-03-05,
+C013,Averitt Express,carrier,API,push,15,active,2026-01-12,2026-01-25,,2026-03-15 21:03:00,510,505,2550,2540,0,,,
+C014,LSO (Lone Star Overnight),carrier,Flat File,push,720,inactive,2025-09-01,2025-10-20,,,,85,0,425,0,0,,,
+C015,Dayton Freight Lines,carrier,API,push,15,active,2026-02-10,2026-02-22,,2026-03-15 20:58:00,330,322,1650,1634,1,2026-03-02,,
+T001,SAP LBN,tms,API,pull,,active,2025-11-01,2025-11-18,2026-03-15 20:00:00,,4200,4158,21000,20748,3,2026-03-10,,
+T002,Oracle OTM,tms,API,pull,,active,2025-10-15,2025-11-05,2026-03-15 19:30:00,,3100,3069,15500,15345,1,2026-03-08,,
+T003,Blue Yonder TMS,tms,API,push,30,active,2026-01-20,2026-02-08,,2026-03-15 20:45:00,1850,1832,9250,9157,4,2026-03-11,,
+T004,MercuryGate TMS,tms,API,pull,,onboarding,2026-02-25,,2026-03-15 18:00:00,,290,280,1450,1406,0,,,
+G001,Samsara GPS,gps,API,push,5,active,2026-01-05,2026-01-10,,2026-03-15 21:12:00,2100,2094,10500,10447,0,,,
+G002,Geotab,gps,API,push,5,active,2026-01-08,2026-01-16,,2026-03-15 20:55:00,1740,1731,8700,8613,1,2026-03-12,,
+G003,Verizon Connect,gps,API,push,10,error,2026-02-01,2026-02-20,,2026-03-14 09:00:00,890,623,4450,2847,19,2026-03-14,2026-03-14,
