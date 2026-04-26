@@ -1,6 +1,6 @@
 # project44 TIM Portfolio
 
-A suite of five tools built to demonstrate Technical Integration Manager (TIM) competencies for the project44 platform. Each tool addresses a real problem in carrier/TMS/GPS integration management — from monitoring integration health and decoding EDI files, to diagnosing failures and visualising shipment visibility.
+A suite of tools built to demonstrate Technical Integration Manager (TIM) competencies for the project44 platform. Each tool addresses a real problem in carrier/TMS/GPS integration management — from monitoring integration health and decoding EDI files, to diagnosing failures, simulating API calls, and providing post-onboarding support.
 
 ---
 
@@ -14,6 +14,8 @@ A suite of five tools built to demonstrate Technical Integration Manager (TIM) c
 | RCA Summarizer (AI) | `rca_summarizer.py` | Claude API | `python3 rca_summarizer.py <logfile>` |
 | RCA Native (rule-based) | `rca_native.py` + `rca_rules.py` | Python + Rich | `python3 rca_native.py <logfile>` |
 | Observe | `observe.py` | Streamlit + Plotly | `python3 -m streamlit run observe.py` |
+| API Simulator | `api_simulator.py` | Streamlit | `python3 -m streamlit run api_simulator.py` |
+| FAQ Support Bot | `p44_faq_bot.py` | Streamlit | `python3 -m streamlit run p44_faq_bot.py` |
 
 ---
 
@@ -279,6 +281,54 @@ Two side-by-side Plotly bar charts:
 - **Data Quality % by carrier** — colour-coded (green ≥95%, orange 80–95%, red <80%) with a 95% target line
 
 Network summary line beneath the charts: overall OTD%, average data quality, and count of at-risk carriers.
+
+---
+
+## Tool 7 — API Simulator
+
+**File:** `api_simulator.py`
+
+A Streamlit app for testing and learning the project44 carrier status update API. Covers both TL and LTL endpoints with live payload validation, HTTP response simulation, and guided scenario drills.
+
+```bash
+python3 -m streamlit run api_simulator.py
+```
+
+**Three tabs:**
+- **TL Simulator** — build and submit TL status update payloads; validates required fields, eventType values, coordinate ranges, and timestamp format
+- **LTL Simulator** — build and submit LTL status update payloads; validates PRO number, SCAC, statusCode enum, and exception reason codes
+- **Scenario Drills** — pre-built integration failure scenarios (401 expired token, 400 bad payload, 404 wrong URL, 202 matching failure) with step-by-step walkthrough and correct resolution
+
+Useful for onboarding carrier developers who need to test their integration before going live, and for demonstrating API behaviour in training sessions.
+
+---
+
+## Tool 8 — FAQ Support Bot
+
+**File:** `p44_faq_bot.py`
+
+A self-contained post-onboarding support FAQ for carriers and shippers. No API key required — all answers are pre-written and embedded. Runs entirely offline.
+
+```bash
+python3 -m streamlit run p44_faq_bot.py
+```
+
+**Two modes** — toggle in the sidebar:
+
+**🔧 Carrier mode** — for carrier developers troubleshooting API integrations:
+- Authentication (401, token expiry, Bearer header format, OAuth 2.0 flow)
+- Payload errors (400 vs 422, required fields, LTL and TL payloads)
+- Endpoints and URLs (TL vs LTL path, sandbox vs production, 404 causes)
+- Integration setup (identifiers, SCAC alternatives, eventType and statusCode values)
+- Server errors (500, 502, 503, 429, 403)
+
+**📦 Shipper mode** — for shipper logistics teams tracking freight:
+- Tracking gaps (no updates after pickup, stopped at terminal, tracking not started)
+- Status meanings (ARRIVED_AT_TERMINAL, OUT_FOR_DELIVERY, IN_TRANSIT, DEPARTED_TERMINAL)
+- Exceptions and delays (EXCEPTION status, changing ETAs, reason codes, REWEIGHT_RECLASS)
+- Delivery issues (DELIVERED but not received, refused freight, who to contact)
+
+Questions can be selected from the categorised sidebar browser or found via keyword search (type `401`, `LTL endpoint`, `exception`, `terminal`, `ETA`, etc.).
 
 ---
 
